@@ -1,6 +1,8 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var https = require('https');
+
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -26,6 +28,7 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function(callback) {
+  fs.access(exports.paths.list, fs.constants.F_OK, (err)=> { err && console.log('error'); });
   fs.readFile(exports.paths.list, 'utf8', (err, data) => {
     if (err) { throw err; }
     let list = data.split('\n');
@@ -83,21 +86,24 @@ exports.isUrlArchived = function(url, callback) {
 };
 
 exports.downloadUrls = function(urls) {
-  exports.readListOfUrls(function(list) {
-    for (var i = 0; i < urls.length; i ++) {
-      if (list.includes(urls[i])) {
-        exports.isUrlArchived(urls[i], function(exists, url) { 
-          console.log(exports.paths.archivedSites, url);
-          if (!exists) {
-            fs.writeFile(path.join(exports.paths.archivedSites, urls[i]), 'blah, blah');
-          } 
-        }); 
-      } else {
-        exports.addUrlToList(urls[i], function(url) {
-          console.log(exports.paths.archivedSites, url);
-          fs.writeFile(path.join(exports.paths.archivedSites, url), 'blah, blah');
+  for (var i = 0; i < urls.length; i ++) {
+    exports.isUrlArchived(urls[i], function(isArchived, url, testingAddress) {
+      if (!isArchived) {
+        https.get('https://' + (url), function(res) { 
+          var body = '';
+          res.on('data', function(chunk) {
+            body += chunk;
+          }).on('end', function() {
+            fs.writeFile(testingAddress, body);
+          }).on('error', function(err) {
+            console.log('err: ' + err);
+          });
         });
       }
-    }
-  });
+          
+    });
+  }
+
+  
+  
 };
