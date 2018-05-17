@@ -26,9 +26,9 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function(callback) {
-  fs.readfile(exports.paths.list, 'utf8', (err, data) => {
+  fs.readFile(exports.paths.list, 'utf8', (err, data) => {
     if (err) { throw err; }
-    let list = data.split('\n').slice(0, -1);
+    let list = data.split('\n');
     return callback(list);
   });
 };
@@ -36,30 +36,36 @@ exports.readListOfUrls = function(callback) {
 exports.isUrlInList = function(url, callback) {
   fs.readFile(exports.paths.list, 'utf8', (err, data) => {
     if (err) { throw err; }
-    let list = data.split('\n').slice(0, -1);
+    let list = data.split('\n');
     if (list.includes(url)) {
-      return callback(url, list, true);
+      if (callback) {
+        return callback(true, url, list);
+      }
+      return true;
     }
-    return callback(url, list, false);
+    if (callback) {
+      return callback(false, url, list);
+    }
+    return false;
     
   });
 };
 
 exports.addUrlToList = function(url, callback) {
-  exports.isUrlInList(url, function(url, list, isIn) {
-    if (isIn) {
+  exports.isUrlInList(url, function(isInList, url, list) {
+    if (isInList) {
       console.log(`The ${url} already existed in sites.txt.`);
       if (callback) {
-        return callback(url, list, true);
+        return callback(url, list);
       }
       
     }
     fs.appendFile(exports.paths.list, url + '\n', (err) => {
-      if (err) { throw err; }
+      if (err) { throw err; } 
       console.log(`The ${url} was appended to sites.txt.`);
       list.push(url);
       if (callback) {
-        return callback(url, list, false);
+        return callback(url, list);
       }
     });
     
@@ -67,7 +73,31 @@ exports.addUrlToList = function(url, callback) {
 };
 
 exports.isUrlArchived = function(url, callback) {
+  let testingAddress = path.join(exports.paths.archivedSites, url);
+  fs.access(testingAddress, fs.constants.F_OK, (err) => {
+    if (callback) {
+      return err ? callback(false, url, testingAddress) : callback(true, url, testingAddress);
+    }
+    return !!err;
+  });
 };
 
 exports.downloadUrls = function(urls) {
+  exports.readListOfUrls(function(list) {
+    for (var i = 0; i < urls.length; i ++) {
+      if (list.includes(urls[i])) {
+        exports.isUrlArchived(urls[i], function(exists, url) { 
+          console.log(exports.paths.archivedSites, url);
+          if (!exists) {
+            fs.writeFile(path.join(exports.paths.archivedSites, urls[i]), 'blah, blah');
+          } 
+        }); 
+      } else {
+        exports.addUrlToList(urls[i], function(url) {
+          console.log(exports.paths.archivedSites, url);
+          fs.writeFile(path.join(exports.paths.archivedSites, url), 'blah, blah');
+        });
+      }
+    }
+  });
 };

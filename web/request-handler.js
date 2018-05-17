@@ -36,6 +36,7 @@ exports.handleRequest = function (req, res) {
       req.on('end', () => {
         requestedUrl = body.slice(body.indexOf('url=') + 'url='.length);
         archive.addUrlToList(requestedUrl, function() {
+          console.log(requestedUrl);
           httpHelpers.sendResponse(res, 302);
         });
       });
