@@ -4,6 +4,7 @@ var initialize = require('./initialize.js');
 
 // Why do you think we have this here?
 // HINT: It has to do with what's in .gitignore
+// It's because we might invoke the server in any folder and we will dynamically create an archive folder to keep the sites and urls - David
 initialize('./archives');
 
 var port = 8080;

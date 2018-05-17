@@ -26,12 +26,44 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function(callback) {
+  fs.readfile(exports.paths.list, 'utf8', (err, data) => {
+    if (err) { throw err; }
+    let list = data.split('\n').slice(0, -1);
+    return callback(list);
+  });
 };
 
 exports.isUrlInList = function(url, callback) {
+  fs.readFile(exports.paths.list, 'utf8', (err, data) => {
+    if (err) { throw err; }
+    let list = data.split('\n').slice(0, -1);
+    if (list.includes(url)) {
+      return callback(url, list, true);
+    }
+    return callback(url, list, false);
+    
+  });
 };
 
 exports.addUrlToList = function(url, callback) {
+  exports.isUrlInList(url, function(url, list, isIn) {
+    if (isIn) {
+      console.log(`The ${url} already existed in sites.txt.`);
+      if (callback) {
+        return callback(url, list, true);
+      }
+      
+    }
+    fs.appendFile(exports.paths.list, url + '\n', (err) => {
+      if (err) { throw err; }
+      console.log(`The ${url} was appended to sites.txt.`);
+      list.push(url);
+      if (callback) {
+        return callback(url, list, false);
+      }
+    });
+    
+  });
 };
 
 exports.isUrlArchived = function(url, callback) {
